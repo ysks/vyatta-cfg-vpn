@@ -178,7 +178,11 @@ foreach my $peer (@peers) {
 
             # Binding changed.
             my $currMark = vtiIntf::isVtimarkpresent($peer, $lip);
-            $gencmds .= "sudo /sbin/ip link delete $vtiPresent type vti &> /dev/null\n";
+            if (validateType('ipv6', $peer, 'quiet')) {
+                $gencmds .= "sudo /sbin/ip -6 link delete $vtiPresent type vti6 &> /dev/null\n";
+            } else {
+                $gencmds .= "sudo /sbin/ip link delete $vtiPresent type vti &> /dev/null\n";
+            }
             vtiIntf::deleteVtibyname($vtiPresent);
             $change = 1;
         }
@@ -206,8 +210,14 @@ foreach my $peer (@peers) {
     #
     # By default we delete the tunnel...
     my $genmark = $mark;
-    $gencmds .= "sudo /sbin/ip link delete $tunName type vti &> /dev/null\n";
-    $gencmds .= "sudo /sbin/ip link add $tunName type vti local $lip remote $peer okey $genmark\n";
+    if (validateType('ipv6', $peer, 'quiet')) {
+        $gencmds .= "sudo /sbin/ip -6 link delete $tunName type vti6 &> /dev/null\n";
+        $gencmds .= "sudo /sbin/ip -6 link add $tunName type vti6 local $lip remote $peer okey $genmark\n";
+    } else {
+        // IPv4 addr or "0.0.0.0".
+        $gencmds .= "sudo /sbin/ip link delete $tunName type vti &> /dev/null\n";
+        $gencmds .= "sudo /sbin/ip link add $tunName type vti local $lip remote $peer okey $genmark\n";
+    }
     foreach my $tunIP (@tunIPs) {
         $gencmds .= "sudo /sbin/ip addr add $tunIP dev $tunName\n";
     }
@@ -274,6 +284,7 @@ sub cleanupVtiNotConfigured {
     for my $name (keys %$localVtibyNames) {
         $gencmds .= "#For tunnel name $name.\n";
         $gencmds .= "sudo /sbin/ip link delete $name type vti &> /dev/null\n";
+        $gencmds .= "sudo /sbin/ip -6 link delete $name type vti6 &> /dev/null\n";
     }
 }
 
