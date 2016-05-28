@@ -38,6 +38,8 @@ my $maxMarks = 2048;
 
 sub discoverVtiIntfs {
     my @currentVtis = `/sbin/ip tunnel | grep "^vti"`;
+    my @currentVtis6 = `/sbin/ip -6 tunnel | grep "^vti"`;
+    push(@currentVtis, @currentVtis6);
     if (@currentVtis != 0) {
         my ($remote, $local, $name, $mark);
         my $key;
